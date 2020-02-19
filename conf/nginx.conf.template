@@ -1,0 +1,42 @@
+load_module modules/ngx_http_js_module.so;
+
+worker_processes  4;
+error_log stderr debug;
+
+events {
+    worker_connections  256;
+}
+
+http {
+  upstream backend {
+    server {{BACKEND}};
+  }
+
+  js_include nginx.js;
+  js_set     $encoded_query encode_query;
+
+	server {
+		listen       80;
+		server_name  default;
+
+
+    location / {
+        set               $args                  $encoded_query;
+        proxy_set_header  uri                    $uri;
+        proxy_set_header  request_uri            $request_uri;
+        proxy_set_header  args                   $args;
+
+        proxy_pass http://backend;
+    }
+	}
+
+	server {
+		listen       81;
+		server_name  default;
+
+    location / {
+      return 200;
+    }
+	}
+}
+
